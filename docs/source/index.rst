@@ -117,5 +117,4 @@ Resources
    flync_reference
    flync_example
    license
-   release_notes
    contact
