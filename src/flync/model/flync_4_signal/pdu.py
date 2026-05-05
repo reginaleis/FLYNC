@@ -193,10 +193,15 @@ class ContainedPDURef(FLYNCBaseModel):
         Numeric identifier placed in the slot header for this contained PDU.
     pdu_ref : str
         Name of the referenced PDU.
+    offset : int, optional
+        Bit offset of this slot (header + payload) within the container payload.
+        When multiple PDUs are packed sequentially this encodes the start position
+        of each slot so receivers can locate it without parsing preceding slots.
     """
 
     pdu_id: int = Field()
     pdu_ref: str = Field()
+    offset: Optional[int] = Field(default=0, ge=0)
 
 
 class PDUInstance(FLYNCBaseModel):
@@ -255,6 +260,8 @@ class ContainerPDU(PDU):
 
     Parameters
     ----------
+    pdu_id : int
+        Numeric identifier for this container PDU on the network.
     header : :class:`ContainerPDUHeader`
         Per-slot header format specifying the bit widths of the ID and length fields.
     contained_pdus : list of :class:`ContainedPDURef`
@@ -262,6 +269,7 @@ class ContainerPDU(PDU):
     """
 
     type: Literal["container"] = Field(default="container")
+    pdu_id: int = Field(ge=0)
     header: ContainerPDUHeader = Field()
     contained_pdus: List[ContainedPDURef] = Field(default_factory=list)
 

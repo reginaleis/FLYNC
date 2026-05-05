@@ -15,21 +15,40 @@ from flync.model.flync_4_signal.pdu import (
 
 class PDUSender(FLYNCBaseModel):
     """
-    Deployment that publishes an Ethernet frame onto a socket.
+    Deployment that publishes a Container PDU onto a socket.
 
-    Transport (TCP/UDP, IP address, port) is owned by the enclosing socket; this model only binds a frame to that socket.
+    Transport (TCP/UDP, IP address, port) is owned by the enclosing socket; this model only binds a PDU to that socket.
     The publishing ECU is the owner of the socket carrying this deployment.
 
     Parameters
     ----------
     deployment_type : Literal["pdu_sender"]
         Discriminator value for :class:`~flync.model.flync_4_ecu.sockets.DeploymentUnion`.
-    frame_ref : str
-        Name of an :class:`EthernetFrame` in the frame catalog.
+    pdu_ref : str
+        Name of a :class:`~flync.model.flync_4_signal.pdu.ContainerPDU` in the PDU catalog.
     """
 
     deployment_type: Literal["pdu_sender"] = Field(default="pdu_sender")
-    frame_ref: str = Field()
+    pdu_ref: str = Field()
+
+
+class PDUReceiver(FLYNCBaseModel):
+    """
+    Deployment that subscribes to a Container PDU on a socket.
+
+    Transport (TCP/UDP, IP address, port) is owned by the enclosing socket; this model only binds a PDU to that socket.
+    The receiving ECU is the owner of the socket carrying this deployment.
+
+    Parameters
+    ----------
+    deployment_type : Literal["pdu_receiver"]
+        Discriminator value for :class:`~flync.model.flync_4_ecu.sockets.DeploymentUnion`.
+    pdu_ref : str
+        Name of a :class:`~flync.model.flync_4_signal.pdu.ContainerPDU` in the PDU catalog.
+    """
+
+    deployment_type: Literal["pdu_receiver"] = Field(default="pdu_receiver")
+    pdu_ref: str = Field()
 
 
 # ---------------------------------------------------------------------------
@@ -110,28 +129,6 @@ class Frame(UniqueName):
 
 
 # ---------------------------------------------------------------------------
-# Ethernet frame
-# ---------------------------------------------------------------------------
-
-
-class EthernetFrame(Frame):
-    """
-    Ethernet frame.
-
-    Parameters
-    ----------
-    packed_pdus : list of :class:`PDUInstance`
-        PDUs composed into this frame's payload.
-    timing : :class:`FrameTransmissionTiming`, optional
-        Transmission timing for this frame.
-    """
-
-    type: Literal["ethernet"] = Field(default="ethernet")
-    packed_pdus: List[PDUInstance] = Field(default_factory=list)
-    timing: Optional[FrameTransmissionTiming] = Field(default=None)
-
-
-# ---------------------------------------------------------------------------
 # CAN base
 # ---------------------------------------------------------------------------
 
@@ -146,8 +143,6 @@ class CANFrameBase(Frame):
         CAN message identifier.
     id_format : Literal["standard_11bit", "extended_29bit"]
         Identifier format.
-    publisher_node : str, optional
-        Name of the node that transmits this frame.
     packed_pdus : list of :class:`PDUInstance`
         PDU instances placed at fixed bit offsets within this frame.
     timing : :class:`FrameTransmissionTiming`, optional
@@ -156,7 +151,6 @@ class CANFrameBase(Frame):
 
     can_id: int = Field()
     id_format: Literal["standard_11bit", "extended_29bit"] = Field()
-    publisher_node: Optional[Annotated[str, Field(min_length=1)]] = Field(default=None)
     packed_pdus: List[PDUInstance] = Field(default_factory=list)
     timing: Optional[FrameTransmissionTiming] = Field(default=None)
 
@@ -185,8 +179,6 @@ class CANFrame(CANFrameBase):
     is_remote_frame : bool
         Whether this is a Remote Transmission Request (RTR) frame.
         Defaults to ``False``.
-    publisher_node : str, optional
-        Name of the node that transmits this frame.
     """
 
     type: Literal["can"] = Field(default="can")
@@ -222,8 +214,6 @@ class CANFDFrame(CANFrameBase):
         Enables a higher bit rate during the data phase.  Defaults to ``True``.
     error_state_indicator : bool
         Error State Indicator flag.  Defaults to ``False``.
-    publisher_node : str, optional
-        Name of the node that transmits this frame.
     """
 
     type: Literal["can_fd"] = Field(default="can_fd")
@@ -259,8 +249,6 @@ class LINFrame(Frame):
         6-bit LIN frame identifier in the range [0, 0x3F].
     checksum_type : Literal["classic", "enhanced"]
         LIN checksum model.  Defaults to ``"enhanced"``.
-    publisher_node : str
-        Name of the node that publishes this frame.
     packed_pdus : list of :class:`PDUInstance`
         PDU instances placed at fixed bit offsets within this frame.
     timing : :class:`FrameTransmissionTiming`, optional
@@ -270,7 +258,6 @@ class LINFrame(Frame):
     type: Literal["lin"] = Field(default="lin")
     lin_id: Annotated[int, Field(ge=0, le=0x3F)] = Field()
     checksum_type: Literal["classic", "enhanced"] = Field(default="enhanced")
-    publisher_node: Annotated[str, Field(min_length=1)] = Field()
     length: int = Field(ge=1, le=8)
     packed_pdus: List[PDUInstance] = Field(default_factory=list)
     timing: Optional[FrameTransmissionTiming] = Field(default=None)
