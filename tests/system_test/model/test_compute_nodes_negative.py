@@ -17,7 +17,7 @@ from flync.model.flync_4_metadata.metadata import BaseVersion
 
 
 @pytest.mark.xfail(reason="Known bug")
-def test_compute_nodes_require_VirtualSwitch():
+def test_compute_nodes_require_virtual_switch():
     """
     Objective:
     Enforce that compute nodes cannot exist without a bridge.
